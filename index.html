@@ -3,162 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>5G Network Failure Prediction</title>
+    <title>Network Failure Prediction</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; }
+        button { width: 100%; padding: 10px; margin: 10px 0; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>5G Network Failure Prediction</h2>
-
+        <h2>Network Failure Prediction</h2>
         <button id="measure-btn" onclick="measureNetworkParams()">Measure Network Parameters</button>
-        <button id="predict-btn" onclick="predictFailure()" disabled>Predict Network Failure</button>
-        
         <div id="network-details"></div>
-        <div id="prediction-result"></div>
     </div>
 
     <script>
         let networkInfo = null;
-        let lat = null;
-        let lng = null;
-
-        // Function to handle network type fallback
-        function getNetworkType() {
-            if ('connection' in navigator) {
-                const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                if (connection && connection.effectiveType) {
-                    return connection.effectiveType;  // Return the network type detected by the browser
-                }
-            }
-            return 'unknown';  // Fallback if effectiveType is not available
-        }
 
         // Function to measure network parameters
         async function measureNetworkParams() {
             try {
-                await getNetworkInfo(); // Get network info first
+                // Get network info using Network Information API
+                if ('connection' in navigator) {
+                    networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                    const networkType = getNetworkType();
+                    const downlink = networkInfo.downlink || 'unknown';
+                    const uplink = networkInfo.upLink || 'unknown';
+                    const rtt = networkInfo.rtt || 'unknown';
 
-                // Check if networkInfo is valid
-                if (!networkInfo) {
-                    throw new Error('Network information is not available.');
+                    // Display the measured parameters
+                    document.getElementById('network-details').innerHTML = `
+                        <strong>Network Parameters:</strong><br>
+                        Network Type: ${networkType}<br>
+                        Downlink: ${downlink} Mbps<br>
+                        Uplink: ${uplink} Mbps<br>
+                        Latency (RTT): ${rtt} ms<br>
+                    `;
+
+                    // Predict network strength
+                    const signalStrength = estimateSignalStrength(rtt, downlink);
+                    document.getElementById('network-details').innerHTML += `
+                        <strong>Estimated Signal Strength:</strong> ${signalStrength} dBm<br>
+                    `;
+                    
+                    // Send data to the backend for prediction
+                    await getPrediction(signalStrength, networkType);
+                } else {
+                    alert('Network Information API not supported in your browser.');
                 }
-
-                const avgDownloadSpeed = await measureNetworkSpeeds(); // Measure download speeds
-                const signalStrength = estimateSignalStrength(networkInfo.rtt, avgDownloadSpeed); // Estimate signal strength
-                const networkType = getNetworkType(); // Get network type
-
-                // Display the updated network details
-                document.getElementById('network-details').innerHTML = `
-                    <strong>Network Details:</strong><br>
-                    Network Type: ${networkType}<br>
-                    RTT (Latency): ${networkInfo.rtt} ms<br>
-                    Average Download Speed: ${avgDownloadSpeed} Mbps<br>
-                    Estimated Signal Strength: ${signalStrength}
-                `;
-
-                // Enable the prediction button
-                document.getElementById('predict-btn').disabled = false;
             } catch (error) {
-                console.error('Measurement error:', error);
+                console.error('Error measuring network parameters:', error);
                 alert('Error measuring network parameters: ' + error.message);
             }
         }
 
-        // Get network info using Network Information API
-        async function getNetworkInfo() {
-            return new Promise((resolve, reject) => {
-                if ('connection' in navigator) {
-                    networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-
-                    // Get user location (geolocation)
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(function(position) {
-                            lat = position.coords.latitude;
-                            lng = position.coords.longitude;
-                            console.log('Location obtained:', lat, lng);
-                            resolve();
-                        }, (error) => {
-                            console.error('Geolocation error:', error);
-                            reject('Geolocation API not supported or permission denied.');
-                        });
-                    } else {
-                        alert('Geolocation API not supported');
-                        resolve();
-                    }
-                } else {
-                    alert('Network Information API not supported');
-                    resolve();
-                }
-            });
+        // Get network type
+        function getNetworkType() {
+            if ('connection' in navigator) {
+                return navigator.connection.effectiveType || 'unknown';
+            }
+            return 'unknown';
         }
 
-        // Function to measure download speeds over 5 seconds
-        async function measureNetworkSpeeds() {
-            let downloadSpeeds = [];
-            const testUrl = 'https://www.example.com/small-test-file.txt';  // Test file URL
+        // Estimate signal strength in dBm based on latency and downlink
+        function estimateSignalStrength(rtt, downlink) {
+            let signalStrength;
 
-            const startTime = Date.now();
-            while ((Date.now() - startTime) < 5000) {  // Measure for 5 seconds
-                const speed = await measureDownloadSpeed(testUrl);
-                if (speed) {
-                    downloadSpeeds.push(speed);
-                }
-            }
-
-            if (downloadSpeeds.length === 0) {
-                return 0; // Return 0 if no valid speeds were measured
-            }
-
-            const avgDownloadSpeed = (downloadSpeeds.reduce((a, b) => a + b, 0) / downloadSpeeds.length).toFixed(2);
-            return avgDownloadSpeed; // Return the average download speed
-        }
-
-        // Function to measure download speed
-        async function measureDownloadSpeed(url) {
-            const startTime = Date.now();
-            try {
-                const response = await fetch(url);  // Fetch the test file
-                const data = await response.blob(); // Get the file size
-                const fileSize = data.size * 8 / (1024 * 1024);  // Convert to Megabits
-                const duration = (Date.now() - startTime) / 1000;  // Time in seconds
-
-                // Download Speed in Mbps
-                return (fileSize / duration).toFixed(2);
-            } catch (error) {
-                console.error('Download speed measurement error:', error);
-                return null; // Return null if there is an error
-            }
-        }
-
-        // Function to estimate signal strength based on RTT (latency) and download speed
-        function estimateSignalStrength(rtt, downloadSpeed) {
-            if (rtt <= 50 && downloadSpeed > 50) {
-                return '-50 to -65 dBm (Excellent)';
-            } else if (rtt <= 100 && downloadSpeed > 20) {
-                return '-65 to -75 dBm (Good)';
-            } else if (rtt <= 200 && downloadSpeed > 10) {
-                return '-75 to -85 dBm (Fair)';
-            } else if (rtt <= 300 && downloadSpeed > 1) {
-                return '-85 to -95 dBm (Poor)';
+            // Simple formula for estimating signal strength based on downlink speed
+            if (downlink > 50) {
+                signalStrength = -30;  // Excellent
+            } else if (downlink > 20) {
+                signalStrength = -70;  // Good
+            } else if (downlink > 10) {
+                signalStrength = -90;  // Fair
             } else {
-                return 'Below -95 dBm (Very Poor)';
+                signalStrength = -110; // Poor
             }
+
+            // Adjust based on latency (in ms)
+            if (rtt > 200) {
+                signalStrength -= 10; // Decrease signal strength for higher latency
+            } else if (rtt > 100) {
+                signalStrength -= 5;  // Slight decrease for moderate latency
+            }
+
+            return signalStrength; // Return in dBm
         }
 
-        // Send network data to the backend for prediction
+        // Send data to backend for prediction
         async function getPrediction(signalStrength, networkType) {
             const data = {
-                network_type: networkType,  // Now uses the fallback value
-                rtt: networkInfo ? networkInfo.rtt : 0,
-                downlink: networkInfo ? networkInfo.downlink : 0,
-                signal_strength: signalStrength,
-                lat: lat,
-                lng: lng
+                network_type: networkType,
+                downlink: networkInfo.downlink,
+                uplink: networkInfo.upLink,
+                rtt: networkInfo.rtt,
+                signal_strength: signalStrength
             };
 
             try {
@@ -169,22 +109,12 @@
                 });
 
                 const result = await response.json();
-                document.getElementById('prediction-result').innerHTML = `Prediction: ${result.prediction}`;
+                document.getElementById('network-details').innerHTML += `
+                    <strong>Prediction Result:</strong> ${result.prediction}<br>
+                `;
+                console.log('Prediction result:', result);
             } catch (error) {
-                console.error('Prediction error:', error);
-                alert('Error predicting network failure: ' + error.message);
-            }
-        }
-
-        // Predict failure based on gathered parameters
-        async function predictFailure() {
-            if (networkInfo) {
-                const avgDownloadSpeed = await measureNetworkSpeeds(); // Measure speeds again for prediction
-                const signalStrength = estimateSignalStrength(networkInfo.rtt, avgDownloadSpeed);
-                const networkType = getNetworkType();
-                await getPrediction(signalStrength, networkType);
-            } else {
-                alert('Please measure the network parameters first.');
+                console.error('Error during prediction:', error);
             }
         }
     </script>
