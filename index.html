@@ -27,44 +27,68 @@
                 // Clear previous results
                 document.getElementById('network-details').innerHTML = '';
 
-                // Get network info using Network Information API
-                if ('connection' in navigator) {
-                    networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                    const networkType = getNetworkType();
-                    const downlink = networkInfo.downlink || 'unknown';
-                    const rtt = networkInfo.rtt || 'unknown';
+                // Measure parameters over 5 seconds
+                const measurements = [];
+                const measurementDuration = 5; // seconds
+                const sampleInterval = 1000; // 1 second
 
-                    // Display the measured parameters
-                    document.getElementById('network-details').innerHTML = `
-                        <strong>Network Parameters:</strong><br>
-                        Network Type: ${networkType}<br>
-                        Downlink: ${downlink} Mbps<br>
-                        Latency (RTT): ${rtt} ms<br>
-                    `;
+                for (let i = 0; i < measurementDuration; i++) {
+                    // Get network info using Network Information API
+                    if ('connection' in navigator) {
+                        networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                        const networkType = getNetworkType();
+                        const downlink = networkInfo.downlink || 'unknown';
+                        const rtt = networkInfo.rtt || 'unknown';
 
-                    // Predict network strength
-                    const signalStrength = estimateSignalStrength(rtt, downlink);
-                    document.getElementById('network-details').innerHTML += `
-                        <strong>Estimated Signal Strength:</strong> ${signalStrength} dBm<br>
-                    `;
-                    
-                    // Send data to the backend for prediction
-                    await getPrediction(signalStrength, networkType);
-                } else {
-                    alert('Network Information API not supported in your browser.');
+                        // Store the measured parameters
+                        measurements.push({ downlink: parseFloat(downlink), rtt: parseFloat(rtt) });
+
+                        // Wait for the next sample
+                        await new Promise(resolve => setTimeout(resolve, sampleInterval));
+                    } else {
+                        alert('Network Information API not supported in your browser.');
+                        return;
+                    }
                 }
+
+                // Calculate averages
+                const avgDownlink = calculateAverage(measurements.map(m => m.downlink));
+                const avgRtt = calculateAverage(measurements.map(m => m.rtt));
+
+                // Display the measured parameters
+                document.getElementById('network-details').innerHTML = `
+                    <strong>Network Parameters:</strong><br>
+                    Network Type: ${getNetworkType()}<br>
+                    Average Downlink: ${avgDownlink} Mbps<br>
+                    Average Latency (RTT): ${avgRtt} ms<br>
+                `;
+
+                // Predict network strength
+                const signalStrength = estimateSignalStrength(avgRtt, avgDownlink);
+                document.getElementById('network-details').innerHTML += `
+                    <strong>Estimated Signal Strength:</strong> ${signalStrength} dBm<br>
+                `;
+                
+                // Send data to the backend for prediction
+                await getPrediction(signalStrength, getNetworkType());
             } catch (error) {
                 console.error('Error measuring network parameters:', error);
                 alert('Error measuring network parameters: ' + error.message);
             }
         }
 
-        // Get network type
+        // Get network type, defaulting to "5G" if unknown
         function getNetworkType() {
             if ('connection' in navigator) {
-                return navigator.connection.effectiveType || 'unknown';
+                return navigator.connection.effectiveType || '5G'; // Default to "5G"
             }
-            return 'unknown';
+            return '5G'; // Default to "5G"
+        }
+
+        // Calculate average from an array of numbers
+        function calculateAverage(arr) {
+            const total = arr.reduce((acc, val) => acc + val, 0);
+            return (total / arr.length) || 0; // Return 0 if no values
         }
 
         // Estimate signal strength in dBm based on latency and downlink
