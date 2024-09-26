@@ -150,9 +150,13 @@
 
         // Predict failure based on gathered parameters
         async function predictFailure() {
-            const signalStrength = estimateSignalStrength(networkInfo.rtt, await measureNetworkSpeeds());
-            const networkType = getNetworkType();
-            await getPrediction(signalStrength, networkType);
+            if (networkInfo) {
+                const signalStrength = estimateSignalStrength(networkInfo.rtt, await measureNetworkSpeeds());
+                const networkType = getNetworkType();
+                await getPrediction(signalStrength, networkType);
+            } else {
+                alert('Please measure the network parameters first.');
+            }
         }
     </script>
 
