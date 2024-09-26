@@ -67,11 +67,12 @@
     </div>
 
     <script>
+        let networkInfo = null;
         let lastMeasurements = null; // Store last measurements for prediction
 
-        // Function to add random noise to simulate small variations in downlink
+        // Function to add random noise to simulate small variations in downlink and latency
         function addNoise(value, range) {
-            const noise = (Math.random() * range - range / 2);
+            const noise = (Math.random() * range - range / 2); // Generate noise between -range/2 and +range/2
             return value + noise;
         }
 
@@ -84,22 +85,26 @@
                 // Get user's location
                 const location = await getUserLocation();
                 const areaName = await getAreaName(location.lat, location.lng);
-
-                // Measure downlink over 20 seconds
+                
+                // Measure parameters over 10 seconds
                 const measurements = [];
                 const measurementDuration = 10; // seconds
                 const sampleInterval = 1000; // 1 second
 
                 for (let i = 0; i < measurementDuration; i++) {
+                    // Get network info using Network Information API
                     if ('connection' in navigator) {
-                        const networkInfo = navigator.connection;
-                        const downlink = networkInfo.downlink ? parseFloat(networkInfo.downlink) : 0;
-                        const rtt = networkInfo.rtt ? parseFloat(networkInfo.rtt) : 0;
+                        networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                        const networkType = getNetworkType(); // Always returns "5G"
+                        const downlink = networkInfo.downlink || 'unknown';
+                        const rtt = networkInfo.rtt || 'unknown';
 
-                        measurements.push({
-                            downlink: addNoise(downlink, 2),
-                            rtt: rtt // Latency (RTT) doesn't need averaging
-                        });
+                        // Add noise to simulate variations in downlink and latency
+                        const downlinkWithNoise = addNoise(parseFloat(downlink), 2); // Random noise between -1 and +1 Mbps
+                        const rttWithNoise = addNoise(parseFloat(rtt), 10); // Random noise between -5ms and +5ms
+
+                        // Store the measured parameters with noise
+                        measurements.push({ downlink: downlinkWithNoise, rtt: rttWithNoise });
 
                         // Wait for the next sample
                         await new Promise(resolve => setTimeout(resolve, sampleInterval));
@@ -109,9 +114,9 @@
                     }
                 }
 
-                // Calculate average downlink
+                // Calculate averages
                 const avgDownlink = calculateAverage(measurements.map(m => m.downlink));
-                const avgRtt = measurements[measurements.length - 1].rtt; // Get the latest latency
+                const avgRtt = calculateAverage(measurements.map(m => m.rtt));
 
                 // Store last measurements for prediction
                 lastMeasurements = {
@@ -125,7 +130,7 @@
                     <div class="result-item"><strong>Area:</strong> ${areaName}</div>
                     <div class="result-item"><strong>Network Type:</strong> 5G</div>
                     <div class="result-item"><strong>Average Downlink:</strong> ${avgDownlink.toFixed(2)} Mbps</div>
-                    <div class="result-item"><strong>Latency (RTT):</strong> ${avgRtt.toFixed(2)} ms</div>
+                    <div class="result-item"><strong>Average Latency (RTT):</strong> ${avgRtt.toFixed(2)} ms</div>
                 `;
 
                 // Estimate and display signal strength based on downlink and latency
@@ -220,7 +225,7 @@
                 downlink: downlink,
                 rtt: rtt,
                 signal_strength: signalStrength,
-                area_name: area_name
+                area_name: area_name // Include area name in the prediction request
             };
 
             try {
@@ -232,14 +237,11 @@
 
                 const result = await response.json();
                 document.getElementById('network-details').innerHTML += `
-                    <div class="result-item"><strong>Failure Prediction:</strong> ${result.prediction}</div>
+                    <div class="result-item"><strong>Prediction Result:</strong> ${result.prediction}</div>
                 `;
-
+                console.log('Prediction result:', result);
             } catch (error) {
-                console.error('Error during network failure prediction:', error);
-                alert('Error during prediction: ' + error.message);
+                console.error('Error during prediction:', error);
             }
         }
-    </script>
-</body>
-</html>
+    </script
