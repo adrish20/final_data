@@ -40,7 +40,7 @@
                     // Get network info using Network Information API
                     if ('connection' in navigator) {
                         networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                        const networkType = getNetworkType();
+                        const networkType = getNetworkType(); // Always returns "5G"
                         const downlink = networkInfo.downlink || 'unknown';
                         const rtt = networkInfo.rtt || 'unknown';
 
@@ -63,7 +63,7 @@
                 document.getElementById('network-details').innerHTML = `
                     <strong>Network Parameters:</strong><br>
                     Area: ${areaName}<br>
-                    Network Type: ${getNetworkType()}<br>
+                    Network Type: 5G<br>
                     Average Downlink: ${avgDownlink} Mbps<br>
                     Average Latency (RTT): ${avgRtt} ms<br>
                 `;
@@ -75,7 +75,7 @@
                 `;
                 
                 // Send data to the backend for prediction
-                await getPrediction(signalStrength, getNetworkType(), areaName);
+                await getPrediction(signalStrength, "5G", areaName); // Always send "5G"
             } catch (error) {
                 console.error('Error measuring network parameters:', error);
                 alert('Error measuring network parameters: ' + error.message);
@@ -108,12 +108,9 @@
             return data.display_name || 'Unknown Area';
         }
 
-        // Get network type, defaulting to "5G" if unknown
+        // Get network type, defaulting to "5G"
         function getNetworkType() {
-            if ('connection' in navigator) {
-                return navigator.connection.effectiveType || '5G'; // Default to "5G"
-            }
-            return '5G'; // Default to "5G"
+            return '5G'; // Always return "5G"
         }
 
         // Calculate average from an array of numbers
