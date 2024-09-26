@@ -5,9 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Failure Prediction</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
-        button { width: 100%; padding: 10px; margin: 10px 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+            background-color: #e8f5e9;
+        }
     </style>
 </head>
 <body>
@@ -15,7 +58,7 @@
     <div class="container">
         <h2>Network Failure Prediction</h2>
         <button id="measure-btn" onclick="measureNetworkParams()">Measure Network Parameters</button>
-        <div id="network-details"></div>
+        <div id="network-details" class="results"></div>
     </div>
 
     <script>
@@ -31,9 +74,9 @@
                 const location = await getUserLocation();
                 const areaName = await getAreaName(location.lat, location.lng);
                 
-                // Measure parameters over 5 seconds
+                // Measure parameters over 7 seconds
                 const measurements = [];
-                const measurementDuration = 5; // seconds
+                const measurementDuration = 7; // seconds
                 const sampleInterval = 1000; // 1 second
 
                 for (let i = 0; i < measurementDuration; i++) {
@@ -64,8 +107,8 @@
                     <strong>Network Parameters:</strong><br>
                     Area: ${areaName}<br>
                     Network Type: 5G<br>
-                    Average Downlink: ${avgDownlink} Mbps<br>
-                    Average Latency (RTT): ${avgRtt} ms<br>
+                    Average Downlink: ${avgDownlink.toFixed(2)} Mbps<br>
+                    Average Latency (RTT): ${avgRtt.toFixed(2)} ms<br>
                 `;
 
                 // Predict network strength
@@ -125,11 +168,11 @@
 
             // Simple formula for estimating signal strength based on downlink speed
             if (downlink > 50) {
-                signalStrength = -40;  // Excellent
+                signalStrength = -30;  // Excellent
             } else if (downlink > 20) {
-                signalStrength = -70 ;  // Good
+                signalStrength = -70;  // Good
             } else if (downlink > 10) {
-                signalStrength = -95;  // Fair
+                signalStrength = -90;  // Fair
             } else {
                 signalStrength = -110; // Poor
             }
