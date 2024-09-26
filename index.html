@@ -40,26 +40,33 @@
 
         // Function to measure network parameters
         async function measureNetworkParams() {
-            await getNetworkInfo(); // Get network info first
-            const avgDownloadSpeed = await measureNetworkSpeeds(); // Then measure download speeds
+            try {
+                await getNetworkInfo(); // Get network info first
 
-            // Estimate signal strength based on both latency and download speed
-            const signalStrength = estimateSignalStrength(networkInfo.rtt, avgDownloadSpeed);
+                // Check if networkInfo is valid
+                if (!networkInfo) {
+                    throw new Error('Network information is not available.');
+                }
 
-            // Get network type
-            const networkType = getNetworkType();
+                const avgDownloadSpeed = await measureNetworkSpeeds(); // Measure download speeds
+                const signalStrength = estimateSignalStrength(networkInfo.rtt, avgDownloadSpeed); // Estimate signal strength
+                const networkType = getNetworkType(); // Get network type
 
-            // Display the updated network details
-            document.getElementById('network-details').innerHTML = `
-                <strong>Network Details:</strong><br>
-                Network Type: ${networkType}<br>
-                RTT (Latency): ${networkInfo.rtt} ms<br>
-                Average Download Speed: ${avgDownloadSpeed} Mbps<br>
-                Estimated Signal Strength: ${signalStrength}
-            `;
+                // Display the updated network details
+                document.getElementById('network-details').innerHTML = `
+                    <strong>Network Details:</strong><br>
+                    Network Type: ${networkType}<br>
+                    RTT (Latency): ${networkInfo.rtt} ms<br>
+                    Average Download Speed: ${avgDownloadSpeed} Mbps<br>
+                    Estimated Signal Strength: ${signalStrength}
+                `;
 
-            // Enable the prediction button
-            document.getElementById('predict-btn').disabled = false;
+                // Enable the prediction button
+                document.getElementById('predict-btn').disabled = false;
+            } catch (error) {
+                console.error(error);
+                alert('Error measuring network parameters: ' + error.message);
+            }
         }
 
         // Get network info using Network Information API
@@ -74,7 +81,10 @@
                             lat = position.coords.latitude;
                             lng = position.coords.longitude;
                             resolve();
-                        }, reject);
+                        }, (error) => {
+                            console.error('Geolocation error:', error);
+                            reject('Geolocation API not supported or permission denied.');
+                        });
                     } else {
                         alert('Geolocation API not supported');
                         resolve();
@@ -89,11 +99,14 @@
         // Function to measure download speeds over 5 seconds
         async function measureNetworkSpeeds() {
             let downloadSpeeds = [];
-            const testUrl = 'https://example.com/small-test-file.txt';  // Test file URL
+            const testUrl = 'https://www.example.com/small-test-file.txt';  // Test file URL
 
             const startTime = Date.now();
             while ((Date.now() - startTime) < 5000) {  // Measure for 5 seconds
-                downloadSpeeds.push(await measureDownloadSpeed(testUrl));
+                const speed = await measureDownloadSpeed(testUrl);
+                if (speed) {
+                    downloadSpeeds.push(speed);
+                }
             }
 
             const avgDownloadSpeed = (downloadSpeeds.reduce((a, b) => a + b, 0) / downloadSpeeds.length).toFixed(2);
@@ -103,13 +116,18 @@
         // Function to measure download speed
         async function measureDownloadSpeed(url) {
             const startTime = Date.now();
-            const response = await fetch(url);  // Fetch the test file
-            const data = await response.blob(); // Get the file size
-            const fileSize = data.size * 8 / (1024 * 1024);  // Convert to Megabits
-            const duration = (Date.now() - startTime) / 1000;  // Time in seconds
+            try {
+                const response = await fetch(url);  // Fetch the test file
+                const data = await response.blob(); // Get the file size
+                const fileSize = data.size * 8 / (1024 * 1024);  // Convert to Megabits
+                const duration = (Date.now() - startTime) / 1000;  // Time in seconds
 
-            // Download Speed in Mbps
-            return (fileSize / duration).toFixed(2);
+                // Download Speed in Mbps
+                return (fileSize / duration).toFixed(2);
+            } catch (error) {
+                console.error('Download speed measurement error:', error);
+                return null; // Return null if there is an error
+            }
         }
 
         // Function to estimate signal strength based on RTT (latency) and download speed
@@ -138,14 +156,19 @@
                 lng: lng
             };
 
-            const response = await fetch('http://localhost:5000/predict', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            try {
+                const response = await fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
 
-            const result = await response.json();
-            document.getElementById('prediction-result').innerHTML = `Prediction: ${result.prediction}`;
+                const result = await response.json();
+                document.getElementById('prediction-result').innerHTML = `Prediction: ${result.prediction}`;
+            } catch (error) {
+                console.error('Prediction error:', error);
+                alert('Error predicting network failure: ' + error.message);
+            }
         }
 
         // Predict failure based on gathered parameters
