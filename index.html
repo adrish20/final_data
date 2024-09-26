@@ -70,12 +70,6 @@
         let networkInfo = null;
         let lastMeasurements = null; // Store last measurements for prediction
 
-        // Function to add random noise to simulate small variations in downlink and latency
-        function addNoise(value, range) {
-            const noise = (Math.random() * range - range / 2); // Generate noise between -range/2 and +range/2
-            return value + noise;
-        }
-
         // Function to measure network parameters
         async function measureNetworkParams() {
             try {
@@ -99,12 +93,8 @@
                         const downlink = networkInfo.downlink || 'unknown';
                         const rtt = networkInfo.rtt || 'unknown';
 
-                        // Add noise to simulate variations in downlink and latency
-                        const downlinkWithNoise = addNoise(parseFloat(downlink), 2); // Random noise between -1 and +1 Mbps
-                        const rttWithNoise = addNoise(parseFloat(rtt), 10); // Random noise between -5ms and +5ms
-
-                        // Store the measured parameters with noise
-                        measurements.push({ downlink: downlinkWithNoise, rtt: rttWithNoise });
+                        // Store the measured parameters
+                        measurements.push({ downlink: parseFloat(downlink), rtt: parseFloat(rtt) });
 
                         // Wait for the next sample
                         await new Promise(resolve => setTimeout(resolve, sampleInterval));
@@ -133,7 +123,7 @@
                     <div class="result-item"><strong>Average Latency (RTT):</strong> ${avgRtt.toFixed(2)} ms</div>
                 `;
 
-                // Estimate and display signal strength based on downlink and latency
+                // Predict network strength
                 const signalStrength = estimateSignalStrength(avgRtt, avgDownlink);
                 document.getElementById('network-details').innerHTML += `
                     <div class="result-item"><strong>Estimated Signal Strength:</strong> ${signalStrength} dBm</div>
@@ -244,4 +234,7 @@
                 console.error('Error during prediction:', error);
             }
         }
-    </script
+    </script>
+
+</body>
+</html>
