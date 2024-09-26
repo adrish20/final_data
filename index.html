@@ -76,7 +76,7 @@
             return value + noise;
         }
 
-        // Function to measure network parameters
+        // Function to measure network parameters over 30 seconds
         async function measureNetworkParams() {
             try {
                 // Clear previous results
@@ -86,9 +86,9 @@
                 const location = await getUserLocation();
                 const areaName = await getAreaName(location.lat, location.lng);
                 
-                // Measure parameters over 10 seconds
+                // Measure parameters over 30 seconds
                 const measurements = [];
-                const measurementDuration = 10; // seconds
+                const measurementDuration = 30; // seconds
                 const sampleInterval = 1000; // 1 second
 
                 for (let i = 0; i < measurementDuration; i++) {
@@ -244,4 +244,4 @@
                 console.error('Error during prediction:', error);
             }
         }
-    </script
+    </
