@@ -15,7 +15,9 @@
     <div class="container">
         <h2>5G Network Failure Prediction</h2>
 
-        <button onclick="predictFailure()">Predict Network Failure</button>
+        <button id="measure-btn" onclick="measureNetworkParams()">Measure Network Parameters</button>
+        <button id="predict-btn" onclick="predictFailure()" disabled>Predict Network Failure</button>
+        
         <div id="network-details"></div>
         <div id="prediction-result"></div>
     </div>
@@ -36,8 +38,8 @@
             return 'unknown';  // Fallback if effectiveType is not available
         }
 
-        // Main function to handle permission, get network info, and predict failure
-        async function predictFailure() {
+        // Function to measure network parameters
+        async function measureNetworkParams() {
             await getNetworkInfo(); // Get network info first
             const avgDownloadSpeed = await measureNetworkSpeeds(); // Then measure download speeds
 
@@ -56,8 +58,8 @@
                 Estimated Signal Strength: ${signalStrength}
             `;
 
-            // Send the data for prediction
-            await getPrediction(signalStrength, networkType);
+            // Enable the prediction button
+            document.getElementById('predict-btn').disabled = false;
         }
 
         // Get network info using Network Information API
@@ -144,6 +146,13 @@
 
             const result = await response.json();
             document.getElementById('prediction-result').innerHTML = `Prediction: ${result.prediction}`;
+        }
+
+        // Predict failure based on gathered parameters
+        async function predictFailure() {
+            const signalStrength = estimateSignalStrength(networkInfo.rtt, await measureNetworkSpeeds());
+            const networkType = getNetworkType();
+            await getPrediction(signalStrength, networkType);
         }
     </script>
 
