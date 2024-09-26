@@ -80,9 +80,9 @@
                 const location = await getUserLocation();
                 const areaName = await getAreaName(location.lat, location.lng);
                 
-                // Measure parameters over 7 seconds
+                // Measure parameters over 10 seconds
                 const measurements = [];
-                const measurementDuration = 7; // seconds
+                const measurementDuration = 10; // seconds
                 const sampleInterval = 1000; // 1 second
 
                 for (let i = 0; i < measurementDuration; i++) {
