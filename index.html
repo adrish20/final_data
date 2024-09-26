@@ -28,12 +28,20 @@
         let lat = null;
         let lng = null;
 
-        // Function to gather network info using the Network Information API
+        // Get network info using Network Information API
         function getNetworkInfo() {
             if ('connection' in navigator) {
                 networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+                // Adjust for high downlink speeds, assuming 5G
+                let networkType = networkInfo.effectiveType;
+                if (networkInfo.downlink > 100) {
+                    networkType = '5g';
+                }
+
+                // Display network info
                 document.getElementById('network-details').innerHTML = 
-                    `Network Type: ${networkInfo.effectiveType}, RTT: ${networkInfo.rtt}, Downlink: ${networkInfo.downlink}`;
+                    `Network Type: ${networkType}, RTT: ${networkInfo.rtt}, Downlink: ${networkInfo.downlink}`;
             } else {
                 alert('Network Information API not supported');
             }
@@ -49,7 +57,12 @@
             }
         }
 
-        // Function to send network info to backend and get prediction
+        // Automatically detect network changes
+        if ('connection' in navigator) {
+            navigator.connection.addEventListener('change', getNetworkInfo);
+        }
+
+        // Send network data to the backend for prediction
         async function getPrediction() {
             const data = {
                 network_type: networkInfo ? networkInfo.effectiveType : 'unknown',
