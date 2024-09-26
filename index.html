@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #e9f3ff;
             color: #333;
             padding: 20px;
             display: flex;
@@ -20,14 +20,15 @@
             max-width: 500px;
             margin: 0 auto;
             padding: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #007bff;
             border-radius: 10px;
-            background: #fff;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
         }
         h2 {
             text-align: center;
-            color: #4CAF50;
+            color: #007bff;
+            margin-bottom: 20px;
         }
         button {
             width: 100%;
@@ -35,21 +36,24 @@
             margin: 10px 0;
             border: none;
             border-radius: 5px;
-            background-color: #4CAF50;
+            background-color: #007bff;
             color: white;
             font-size: 16px;
             cursor: pointer;
             transition: background 0.3s;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #0056b3;
         }
         .results {
             margin-top: 20px;
             padding: 10px;
-            border: 1px solid #4CAF50;
+            border: 1px solid #007bff;
             border-radius: 5px;
-            background-color: #e8f5e9;
+            background-color: #d1e7fd;
+        }
+        .result-item {
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -113,17 +117,16 @@
 
                 // Display the measured parameters
                 document.getElementById('network-details').innerHTML = `
-                    <strong>Network Parameters:</strong><br>
-                    Area: ${areaName}<br>
-                    Network Type: 5G<br>
-                    Average Downlink: ${avgDownlink.toFixed(2)} Mbps<br>
-                    Average Latency (RTT): ${avgRtt.toFixed(2)} ms<br>
+                    <div class="result-item"><strong>Area:</strong> ${areaName}</div>
+                    <div class="result-item"><strong>Network Type:</strong> 5G</div>
+                    <div class="result-item"><strong>Average Downlink:</strong> ${avgDownlink.toFixed(2)} Mbps</div>
+                    <div class="result-item"><strong>Average Latency (RTT):</strong> ${avgRtt.toFixed(2)} ms</div>
                 `;
 
                 // Predict network strength
                 const signalStrength = estimateSignalStrength(avgRtt, avgDownlink);
                 document.getElementById('network-details').innerHTML += `
-                    <strong>Estimated Signal Strength:</strong> ${signalStrength} dBm<br>
+                    <div class="result-item"><strong>Estimated Signal Strength:</strong> ${signalStrength} dBm</div>
                 `;
 
                 // Enable the prediction button
@@ -224,7 +227,7 @@
 
                 const result = await response.json();
                 document.getElementById('network-details').innerHTML += `
-                    <strong>Prediction Result:</strong> ${result.prediction}<br>
+                    <div class="result-item"><strong>Prediction Result:</strong> ${result.prediction}</div>
                 `;
                 console.log('Prediction result:', result);
             } catch (error) {
