@@ -24,12 +24,14 @@
         // Function to measure network parameters
         async function measureNetworkParams() {
             try {
+                // Clear previous results
+                document.getElementById('network-details').innerHTML = '';
+
                 // Get network info using Network Information API
                 if ('connection' in navigator) {
                     networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
                     const networkType = getNetworkType();
                     const downlink = networkInfo.downlink || 'unknown';
-                    const uplink = networkInfo.upLink || 'unknown';
                     const rtt = networkInfo.rtt || 'unknown';
 
                     // Display the measured parameters
@@ -37,7 +39,6 @@
                         <strong>Network Parameters:</strong><br>
                         Network Type: ${networkType}<br>
                         Downlink: ${downlink} Mbps<br>
-                        Uplink: ${uplink} Mbps<br>
                         Latency (RTT): ${rtt} ms<br>
                     `;
 
@@ -96,7 +97,6 @@
             const data = {
                 network_type: networkType,
                 downlink: networkInfo.downlink,
-                uplink: networkInfo.upLink,
                 rtt: networkInfo.rtt,
                 signal_strength: signalStrength
             };
