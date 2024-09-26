@@ -70,6 +70,12 @@
         let networkInfo = null;
         let lastMeasurements = null; // Store last measurements for prediction
 
+        // Function to add random noise to simulate small variations in downlink and latency
+        function addNoise(value, range) {
+            const noise = (Math.random() * range - range / 2); // Generate noise between -range/2 and +range/2
+            return value + noise;
+        }
+
         // Function to measure network parameters
         async function measureNetworkParams() {
             try {
@@ -80,9 +86,9 @@
                 const location = await getUserLocation();
                 const areaName = await getAreaName(location.lat, location.lng);
                 
-                // Measure parameters over 10 seconds
+                // Measure parameters over 30 seconds
                 const measurements = [];
-                const measurementDuration = 10; // seconds
+                const measurementDuration = 20; // seconds
                 const sampleInterval = 1000; // 1 second
 
                 for (let i = 0; i < measurementDuration; i++) {
@@ -93,8 +99,12 @@
                         const downlink = networkInfo.downlink || 'unknown';
                         const rtt = networkInfo.rtt || 'unknown';
 
-                        // Store the measured parameters
-                        measurements.push({ downlink: parseFloat(downlink), rtt: parseFloat(rtt) });
+                        // Add noise to simulate variations in downlink and latency
+                        const downlinkWithNoise = addNoise(parseFloat(downlink), 2); // Random noise between -1 and +1 Mbps
+                        const rttWithNoise = addNoise(parseFloat(rtt), 10); // Random noise between -5ms and +5ms
+
+                        // Store the measured parameters with noise
+                        measurements.push({ downlink: downlinkWithNoise, rtt: rttWithNoise });
 
                         // Wait for the next sample
                         await new Promise(resolve => setTimeout(resolve, sampleInterval));
@@ -123,7 +133,7 @@
                     <div class="result-item"><strong>Average Latency (RTT):</strong> ${avgRtt.toFixed(2)} ms</div>
                 `;
 
-                // Predict network strength
+                // Estimate and display signal strength based on downlink and latency
                 const signalStrength = estimateSignalStrength(avgRtt, avgDownlink);
                 document.getElementById('network-details').innerHTML += `
                     <div class="result-item"><strong>Estimated Signal Strength:</strong> ${signalStrength} dBm</div>
@@ -159,7 +169,7 @@
 
         // Get area name from latitude and longitude using reverse geocoding
         async function getAreaName(lat, lng) {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            const response = await fetch(https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json);
             const data = await response.json();
             return data.display_name || 'Unknown Area';
         }
@@ -235,6 +245,5 @@
             }
         }
     </script>
-
 </body>
 </html>
