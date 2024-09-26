@@ -25,24 +25,43 @@
         let lat = null;
         let lng = null;
 
+        // Function to handle network type fallback
+        function getNetworkType() {
+            if ('connection' in navigator) {
+                const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (connection && connection.effectiveType) {
+                    return connection.effectiveType;  // Return the network type detected by the browser
+                }
+            }
+            return 'unknown';  // Fallback if effectiveType is not available
+        }
+
         // Main function to handle permission, get network info, and predict failure
         async function predictFailure() {
-            await getNetworkInfo();
-            const avgDownloadSpeed = await measureNetworkSpeeds();
+            await getNetworkInfo(); // Get network info first
+            const avgDownloadSpeed = await measureNetworkSpeeds(); // Then measure download speeds
 
             // Estimate signal strength based on both latency and download speed
             const signalStrength = estimateSignalStrength(networkInfo.rtt, avgDownloadSpeed);
 
-            // Display the updated network details with estimated signal strength
-            document.getElementById('network-details').innerHTML += 
-                `<br>Estimated Signal Strength: ${signalStrength}`;
+            // Get network type
+            const networkType = getNetworkType();
 
-            // Once network details are gathered, send the data for prediction
-            await getPrediction(signalStrength);
+            // Display the updated network details
+            document.getElementById('network-details').innerHTML = `
+                <strong>Network Details:</strong><br>
+                Network Type: ${networkType}<br>
+                RTT (Latency): ${networkInfo.rtt} ms<br>
+                Average Download Speed: ${avgDownloadSpeed} Mbps<br>
+                Estimated Signal Strength: ${signalStrength}
+            `;
+
+            // Send the data for prediction
+            await getPrediction(signalStrength, networkType);
         }
 
         // Get network info using Network Information API
-        function getNetworkInfo() {
+        async function getNetworkInfo() {
             return new Promise((resolve, reject) => {
                 if ('connection' in navigator) {
                     networkInfo = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
@@ -68,7 +87,6 @@
         // Function to measure download speeds over 5 seconds
         async function measureNetworkSpeeds() {
             let downloadSpeeds = [];
-
             const testUrl = 'https://example.com/small-test-file.txt';  // Test file URL
 
             const startTime = Date.now();
@@ -77,10 +95,7 @@
             }
 
             const avgDownloadSpeed = (downloadSpeeds.reduce((a, b) => a + b, 0) / downloadSpeeds.length).toFixed(2);
-            document.getElementById('network-details').innerHTML +=
-                `<br>Average Download Speed: ${avgDownloadSpeed} Mbps`;
-
-            return avgDownloadSpeed;
+            return avgDownloadSpeed; // Return the average download speed
         }
 
         // Function to measure download speed
@@ -98,22 +113,22 @@
         // Function to estimate signal strength based on RTT (latency) and download speed
         function estimateSignalStrength(rtt, downloadSpeed) {
             if (rtt <= 50 && downloadSpeed > 50) {
-                return '-50 to -70 dBm (Excellent)';
+                return '-50 to -65 dBm (Excellent)';
             } else if (rtt <= 100 && downloadSpeed > 20) {
-                return '-70 to -85 dBm (Good)';
-            } else if (rtt <= 150 && downloadSpeed >10) {
-                return '-85 to -95 dBm (Fair)';
-            } else if (rtt >150 && downloadSpeed > 1) {
-                return '-85 to -115 dBm (Poor)';
+                return '-65 to -75 dBm (Good)';
+            } else if (rtt <= 200 && downloadSpeed > 10) {
+                return '-75 to -85 dBm (Fair)';
+            } else if (rtt <= 300 && downloadSpeed > 1) {
+                return '-85 to -95 dBm (Poor)';
             } else {
-                return 'Below -115 dBm (Very Poor)';
+                return 'Below -95 dBm (Very Poor)';
             }
         }
 
         // Send network data to the backend for prediction
-        async function getPrediction(signalStrength) {
+        async function getPrediction(signalStrength, networkType) {
             const data = {
-                network_type: networkInfo ? networkInfo.effectiveType : 'unknown',
+                network_type: networkType,  // Now uses the fallback value
                 rtt: networkInfo ? networkInfo.rtt : 0,
                 downlink: networkInfo ? networkInfo.downlink : 0,
                 signal_strength: signalStrength,
