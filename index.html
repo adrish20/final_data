@@ -64,7 +64,7 @@
                 // Enable the prediction button
                 document.getElementById('predict-btn').disabled = false;
             } catch (error) {
-                console.error(error);
+                console.error('Measurement error:', error);
                 alert('Error measuring network parameters: ' + error.message);
             }
         }
@@ -80,6 +80,7 @@
                         navigator.geolocation.getCurrentPosition(function(position) {
                             lat = position.coords.latitude;
                             lng = position.coords.longitude;
+                            console.log('Location obtained:', lat, lng);
                             resolve();
                         }, (error) => {
                             console.error('Geolocation error:', error);
@@ -107,6 +108,10 @@
                 if (speed) {
                     downloadSpeeds.push(speed);
                 }
+            }
+
+            if (downloadSpeeds.length === 0) {
+                return 0; // Return 0 if no valid speeds were measured
             }
 
             const avgDownloadSpeed = (downloadSpeeds.reduce((a, b) => a + b, 0) / downloadSpeeds.length).toFixed(2);
@@ -174,7 +179,8 @@
         // Predict failure based on gathered parameters
         async function predictFailure() {
             if (networkInfo) {
-                const signalStrength = estimateSignalStrength(networkInfo.rtt, await measureNetworkSpeeds());
+                const avgDownloadSpeed = await measureNetworkSpeeds(); // Measure speeds again for prediction
+                const signalStrength = estimateSignalStrength(networkInfo.rtt, avgDownloadSpeed);
                 const networkType = getNetworkType();
                 await getPrediction(signalStrength, networkType);
             } else {
