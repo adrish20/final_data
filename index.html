@@ -24,6 +24,7 @@
         let networkInfo = null;
         let lat = null;
         let lng = null;
+        let signalStrength = "Signal strength unavailable"; // Placeholder for signal strength
 
         // Main function to handle permission, get network info, and predict failure
         async function predictFailure() {
@@ -48,7 +49,7 @@
 
                     // Display network info (without speed yet)
                     document.getElementById('network-details').innerHTML = 
-                        `Network Type: ${networkType}, RTT: ${networkInfo.rtt}, Downlink: ${networkInfo.downlink}`;
+                        `Network Type: ${networkType}, RTT: ${networkInfo.rtt}, Downlink: ${networkInfo.downlink}, Signal Strength: ${signalStrength}`;
 
                     // Get user location (geolocation)
                     if (navigator.geolocation) {
@@ -125,6 +126,8 @@
                 network_type: networkInfo ? networkInfo.effectiveType : 'unknown',
                 rtt: networkInfo ? networkInfo.rtt : 0,
                 downlink: networkInfo ? networkInfo.downlink : 0,
+                uplink: networkInfo ? networkInfo.uplink : 0,  // Placeholder, replace if you have a real API for this
+                signal_strength: signalStrength,
                 lat: lat,
                 lng: lng
             };
